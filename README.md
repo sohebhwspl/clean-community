@@ -20,4 +20,4 @@ The first admin is created automatically on the first request if no admin exists
 - Vercel limits request bodies to 4.5 MB, so uploads there are limited to about one photo at a time; self-hosted Node, Railway, Render, etc. have no such limit.
 - `APP_TIMEZONE` (default `Asia/Kolkata`) decides what "today" means for cleanup drives.
 
-- Forgot-password (email OTP) is disabled for admin accounts. If the admin password is lost, run `node --env-file=.env.local scripts/reset-admin-password.mjs <admin-email> <new-password>` on a machine that has the production `MONGODB_URI`.
+- Forgot-password (email OTP) is disabled for admin accounts. If the admin password is lost, run `node --env-file=.env scripts/reset-admin-password.mjs <admin-email> <new-password>` on a machine that has the production `MONGODB_URI`.

@@ -8,6 +8,8 @@ import { deleteObject, presignedUrl, putObject } from './storage'
 
 const MAX_FILES_PER_REQUEST = 5
 const MAX_BYTES = 5 * 1024 * 1024
+/** Folder inside the bucket that holds all photos, e.g. cleancommunity/issues/12/<uuid>.jpg */
+const S3_PREFIX = (process.env.S3_PREFIX ?? 'cleancommunity').replace(/^\/+|\/+$/g, '')
 const EXTENSIONS: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }
 
 /** The real type comes from the file's magic bytes, not from what the browser claims. */
@@ -56,7 +58,7 @@ export async function uploadImages(issueId: number, type: ImageType, files: File
   const stored: { file: File; key: string; contentType: string }[] = []
   try {
     for (const { file, bytes, contentType } of checked) {
-      const key = `issues/${issueId}/${randomUUID()}.${EXTENSIONS[contentType]}`
+      const key = `${S3_PREFIX}/issues/${issueId}/${randomUUID()}.${EXTENSIONS[contentType]}`
       await putObject(key, bytes, contentType)
       stored.push({ file, key, contentType })
     }

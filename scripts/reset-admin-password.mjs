@@ -1,10 +1,10 @@
-// Usage: node --env-file=.env.local scripts/reset-admin-password.mjs <admin-email> <new-password>
+// Usage: node --env-file=.env scripts/reset-admin-password.mjs <admin-email> <new-password>
 import bcrypt from 'bcryptjs'
 import mongoose from 'mongoose'
 
 const [email, password] = process.argv.slice(2)
 if (!email || !password || password.length < 6 || password.length > 72) {
-  console.error('Usage: node --env-file=.env.local scripts/reset-admin-password.mjs <admin-email> <new-password (6-72 chars)>')
+  console.error('Usage: node --env-file=.env scripts/reset-admin-password.mjs <admin-email> <new-password (6-72 chars)>')
   process.exit(1)
 }
 if (!process.env.MONGODB_URI) {
