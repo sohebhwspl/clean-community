@@ -36,6 +36,8 @@ async function ownTask(taskId: number, user: AuthUser) {
   const a = await WorkAssignment.findById(taskId)
   if (!a) throw ApiError.notFound('Task')
   if (a.volunteerId !== user.id) throw ApiError.forbidden('This task is not assigned to you')
+  // The issue was deactivated by an admin: the task disappears too.
+  if (await Issue.exists({ _id: a.issueId, active: false })) throw ApiError.notFound('Task')
   return a
 }
 
@@ -48,7 +50,10 @@ export async function listTasks(user: AuthUser, completed: boolean) {
   const issues = new Map(
     (await Issue.find({ _id: { $in: assignments.map((a) => a.issueId) } }).lean()).map((i) => [i._id, i] as const),
   )
-  const mine = assignments.filter((a) => (issues.get(a.issueId)?.status === 'RESOLVED') === completed)
+  const mine = assignments.filter((a) => {
+    const issue = issues.get(a.issueId)
+    return issue && issue.active !== false && (issue.status === 'RESOLVED') === completed
+  })
   return toViews(mine, issues)
 }
 

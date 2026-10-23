@@ -4,9 +4,12 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 let client: S3Client | undefined
 
 function s3() {
-  // Credentials come from AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY (or the host's IAM role).
+  // S3_* names are used because Vercel does not allow variables that start with AWS_.
+  const accessKeyId = process.env.S3_ACCESS_KEY_ID ?? process.env.AWS_ACCESS_KEY_ID
+  const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY ?? process.env.AWS_SECRET_ACCESS_KEY
   client ??= new S3Client({
-    region: process.env.AWS_REGION ?? 'ap-south-1',
+    region: process.env.S3_REGION ?? process.env.AWS_REGION ?? 'ap-south-1',
+    credentials: accessKeyId && secretAccessKey ? { accessKeyId, secretAccessKey } : undefined,
     endpoint: process.env.S3_ENDPOINT || undefined, // only for S3-compatible services (MinIO, R2, ...)
     forcePathStyle: !!process.env.S3_ENDPOINT,
   })

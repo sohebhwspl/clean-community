@@ -1,15 +1,15 @@
 import { todayString } from './dates'
-import { coverImages } from './issues'
+import { ACTIVE_ONLY, coverImages } from './issues'
 import { CleanupEvent, EventRegistration, Issue, User } from './models'
 
 export async function loadHome() {
   const today = todayString()
   const [totalReports, resolvedIssues, activeVolunteers, cleanupDrives, recent, drives] = await Promise.all([
-    Issue.countDocuments(),
-    Issue.countDocuments({ status: 'RESOLVED' }),
+    Issue.countDocuments(ACTIVE_ONLY),
+    Issue.countDocuments({ status: 'RESOLVED', ...ACTIVE_ONLY }),
     User.countDocuments({ role: 'VOLUNTEER' }),
     CleanupEvent.countDocuments({ status: { $ne: 'CANCELLED' } }),
-    Issue.find().sort({ createdAt: -1, _id: -1 }).limit(6).lean(),
+    Issue.find(ACTIVE_ONLY).sort({ createdAt: -1, _id: -1 }).limit(6).lean(),
     CleanupEvent.find({ status: 'UPCOMING', eventDate: { $gte: today } })
       .sort({ eventDate: 1, startTime: 1 })
       .limit(3)

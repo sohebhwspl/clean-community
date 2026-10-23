@@ -2,7 +2,7 @@ import type { z } from 'zod'
 import type { AuthUser } from './auth'
 import { ApiError } from './http'
 import { nextId } from './ids'
-import { findIssue, getIssueDetail, recordHistory, touch } from './issues'
+import { ACTIVE_ONLY, findIssue, getIssueDetail, recordHistory, touch } from './issues'
 import { CleanupEvent, Issue, STATUSES, ROLES, User, WorkAssignment, type IssueStatus, type Role } from './models'
 import type { assignSchema, reviewSchema, userUpdateSchema, verifySchema } from './schemas'
 import { toUser } from './accounts'
@@ -15,17 +15,17 @@ async function setStatus(id: number, from: IssueStatus, to: IssueStatus, by: num
 
 export async function dashboard() {
   const issuesByStatus = Object.fromEntries(
-    await Promise.all(STATUSES.map(async (s) => [s, await Issue.countDocuments({ status: s })] as const)),
+    await Promise.all(STATUSES.map(async (s) => [s, await Issue.countDocuments({ status: s, ...ACTIVE_ONLY })] as const)),
   )
   const usersByRole = Object.fromEntries(
     await Promise.all(ROLES.map(async (r) => [r, await User.countDocuments({ role: r })] as const)),
   )
   const submittedIds = await WorkAssignment.find({ completedAt: { $ne: null } }).distinct('issueId')
   return {
-    totalIssues: await Issue.countDocuments(),
+    totalIssues: await Issue.countDocuments(ACTIVE_ONLY),
     issuesByStatus,
     awaitingReview: issuesByStatus.SUBMITTED,
-    awaitingVerification: await Issue.countDocuments({ _id: { $in: submittedIds }, status: 'IN_PROGRESS' }),
+    awaitingVerification: await Issue.countDocuments({ _id: { $in: submittedIds }, status: 'IN_PROGRESS', ...ACTIVE_ONLY }),
     usersByRole,
     upcomingDrives: await CleanupEvent.countDocuments({ status: 'UPCOMING', eventDate: { $gte: todayString() } }),
   }
@@ -95,6 +95,13 @@ export async function verifyResolution(id: number, req: z.output<typeof verifySc
   }
   await touch(id)
   return getIssueDetail(id)
+}
+
+/** Soft delete: hide an issue everywhere (or bring it back). Nothing is removed from the database. */
+export async function setIssueActive(id: number, active: boolean) {
+  await findIssue(id)
+  await Issue.updateOne({ _id: id }, { active, updatedAt: new Date() })
+  return getIssueDetail(id, { id: 0, email: '', role: 'ADMIN' })
 }
 
 export async function listUsers(role?: Role) {

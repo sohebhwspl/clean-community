@@ -58,6 +58,8 @@ export const verifySchema = z.object({
   note: z.string().max(500, 'size must be between 0 and 500').nullish(),
 })
 
+export const activeSchema = z.object({ active: z.boolean(required) })
+
 export const userUpdateSchema = z.object({ role: z.enum(ROLES).nullish(), enabled: z.boolean().nullish() })
 
 export const taskStatusSchema = z.object({

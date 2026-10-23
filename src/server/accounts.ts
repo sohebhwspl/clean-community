@@ -50,7 +50,7 @@ export async function me(user: AuthUser) {
 }
 
 export async function updateProfile(user: AuthUser, req: z.output<typeof profileSchema>) {
-  const u = await User.findByIdAndUpdate(user.id, { name: req.name, phone: req.phone }, { new: true }).lean()
+  const u = await User.findByIdAndUpdate(user.id, { name: req.name, phone: req.phone }, { returnDocument: 'after' }).lean()
   if (!u) throw ApiError.notFound('User')
   return u
 }

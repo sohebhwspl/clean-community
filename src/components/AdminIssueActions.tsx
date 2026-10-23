@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import NativeSelect from '@/components/NativeSelect'
-import { assignIssue, getUsers, reviewIssue, verifyResolution } from '@/services/adminService'
+import { assignIssue, getUsers, reviewIssue, setIssueActive, verifyResolution } from '@/services/adminService'
 import type { IssueDetail, IssuePriority, User } from '@/types'
 import { PRIORITIES } from '@/utils/constants'
 import { getErrorMessage } from '@/utils/errors'
@@ -126,6 +126,26 @@ export default function AdminIssueActions({ issue, onChanged }: Props) {
         )}
 
         {noActions && <p className="text-sm text-muted-foreground">No further actions for this status.</p>}
+
+        <div className="space-y-2 border-t pt-4">
+          <h3 className="text-sm font-semibold">Visibility</h3>
+          <p className="text-xs text-muted-foreground">
+            {issue.active
+              ? 'Deactivating hides this report from everyone except admins. Nothing is deleted.'
+              : 'This report is inactive and hidden from everyone except admins.'}
+          </p>
+          <Button
+            variant={issue.active ? 'destructive' : 'default'}
+            className="w-full"
+            disabled={busy}
+            onClick={() => {
+              if (issue.active && !window.confirm('Deactivate this report? You can activate it again later.')) return
+              run(() => setIssueActive(issue.id, !issue.active), issue.active ? 'Report deactivated.' : 'Report activated.')
+            }}
+          >
+            {issue.active ? 'Deactivate report' : 'Activate report'}
+          </Button>
+        </div>
         {message && <p className="text-sm text-primary">{message}</p>}
       </CardContent>
     </Card>

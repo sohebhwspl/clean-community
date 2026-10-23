@@ -10,8 +10,10 @@ export const GET = route({ auth: ['ADMIN'] }, async ({ req }) => {
       category: enumParam(url, 'category', CATEGORIES),
       status: enumParam(url, 'status', STATUSES),
       priority: enumParam(url, 'priority', PRIORITIES),
+      active: enumParam(url, 'active', ['true', 'false']),
     },
     intParam(url, 'page', 0),
     intParam(url, 'size', 10),
+    true,
   )
 })

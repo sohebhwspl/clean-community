@@ -25,6 +25,7 @@ export interface IssueFilters {
   category?: IssueCategory | ''
   status?: IssueStatus | ''
   priority?: IssuePriority | ''
+  active?: 'true' | 'false' | ''
   page?: number
   size?: number
 }

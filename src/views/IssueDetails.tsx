@@ -65,6 +65,7 @@ export default function IssueDetails() {
                 <span className="text-sm font-medium text-muted-foreground">{issueCode(issue.id)}</span>
                 <StatusBadge status={issue.status} />
                 <Badge variant="outline">{titleCase(issue.priority)} priority</Badge>
+                {!issue.active && <Badge variant="outline" className="border-transparent bg-gray-200 text-gray-700">Inactive</Badge>}
               </div>
               <h1 className="break-words text-xl font-bold sm:text-2xl">{issue.title}</h1>
               <p className="text-sm text-primary">{titleCase(issue.category)}</p>

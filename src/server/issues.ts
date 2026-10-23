@@ -44,6 +44,13 @@ export async function findIssue(id: number) {
   return issue
 }
 
+/** Deactivated issues look like they do not exist to everyone except admins. */
+export function assertVisible(issue: IssueDoc, user: AuthUser | null) {
+  if (issue.active === false && user?.role !== 'ADMIN') throw ApiError.notFound('Issue')
+}
+
+export const ACTIVE_ONLY = { active: { $ne: false } }
+
 export async function recordHistory(
   issueId: number,
   from: IssueStatus | null,
@@ -88,6 +95,7 @@ export async function toSummaries(issues: IssueDoc[]) {
     priority: i.priority,
     status: i.status,
     coverImageId: covers.get(i._id) ?? null,
+    active: i.active !== false,
     createdAt: i.createdAt,
   }))
 }
@@ -109,6 +117,7 @@ export async function toDetail(i: IssueDoc) {
     priority: i.priority,
     status: i.status,
     statusReason: i.statusReason ?? null,
+    active: i.active !== false,
     reporter: { id: i.reporterId, name: reporter?.name ?? '' },
     assignedVolunteer: assignment
       ? { id: assignment.volunteerId, name: names.get(assignment.volunteerId) ?? '' }
@@ -125,8 +134,10 @@ export async function toDetail(i: IssueDoc) {
   }
 }
 
-export async function getIssueDetail(id: number) {
-  return toDetail(await findIssue(id))
+export async function getIssueDetail(id: number, user: AuthUser | null = null) {
+  const issue = await findIssue(id)
+  assertVisible(issue, user)
+  return toDetail(issue)
 }
 
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -146,9 +157,11 @@ export interface IssueFilters {
   category?: IssueCategory
   status?: IssueStatus
   priority?: IssuePriority
+  /** Admin screens only: 'true' = active, 'false' = deactivated, undefined = both. Public callers always see active only. */
+  active?: 'true' | 'false'
 }
 
-export async function searchIssues(f: IssueFilters, rawPage: number, rawSize: number) {
+export async function searchIssues(f: IssueFilters, rawPage: number, rawSize: number, asAdmin = false) {
   const { page, size } = normalisePaging(rawPage, rawSize)
   const filter: Record<string, unknown> = {}
   if (f.q && f.q.trim()) {
@@ -161,12 +174,14 @@ export async function searchIssues(f: IssueFilters, rawPage: number, rawSize: nu
   if (f.category) filter.category = f.category
   if (f.status) filter.status = f.status
   if (f.priority) filter.priority = f.priority
+  if (!asAdmin || f.active === 'true') Object.assign(filter, ACTIVE_ONLY)
+  else if (f.active === 'false') filter.active = false
   return pagedQuery(filter, page, size)
 }
 
 export async function myIssues(user: AuthUser, rawPage: number, rawSize: number) {
   const { page, size } = normalisePaging(rawPage, rawSize)
-  return pagedQuery({ reporterId: user.id }, page, size)
+  return pagedQuery({ reporterId: user.id, ...ACTIVE_ONLY }, page, size)
 }
 
 async function pagedQuery(filter: Record<string, unknown>, page: number, size: number) {
@@ -201,6 +216,7 @@ export async function createIssue(req: IssueInput, user: AuthUser) {
 
 export async function updateIssue(id: number, req: IssueInput, user: AuthUser) {
   const issue = await findIssue(id)
+  assertVisible(issue, user)
   const owner = issue.reporterId === user.id
   const admin = user.role === 'ADMIN'
   if (!owner && !admin) throw ApiError.forbidden('You can only edit your own reports')
@@ -216,13 +232,13 @@ export async function updateIssue(id: number, req: IssueInput, user: AuthUser) {
       priority: req.priority ?? 'MEDIUM',
       updatedAt: new Date(),
     },
-    { new: true },
+    { returnDocument: 'after' },
   ).lean()
   return toDetail(updated!)
 }
 
-export async function issueHistory(id: number) {
-  await findIssue(id)
+export async function issueHistory(id: number, user: AuthUser | null = null) {
+  assertVisible(await findIssue(id), user)
   const rows = await IssueStatusHistory.find({ issueId: id }).sort({ createdAt: 1, _id: 1 }).lean()
   const names = await userNames(rows.map((h) => h.changedBy))
   return rows.map((h) => ({

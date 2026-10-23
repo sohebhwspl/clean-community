@@ -44,6 +44,8 @@ const issueSchema = new Schema(
     status: { type: String, enum: values(STATUSES), default: 'SUBMITTED', index: true },
     statusReason: { type: String, default: null },
     reporterId: { type: Number, required: true, index: true },
+    // false = deactivated by an admin: hidden everywhere except the admin screens
+    active: { type: Boolean, default: true },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
   },
@@ -156,6 +158,7 @@ export interface IssueDoc {
   status: IssueStatus
   statusReason?: string | null
   reporterId: number
+  active?: boolean
   createdAt: Date
   updatedAt: Date
 }

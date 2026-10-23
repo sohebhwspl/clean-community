@@ -61,6 +61,7 @@ export interface User {
 }
 
 export interface IssueSummary extends RecentIssue {
+  active: boolean
   landmark: string | null
   priority: IssuePriority
 }
@@ -87,6 +88,7 @@ export interface IssueDetail {
   priority: IssuePriority
   status: IssueStatus
   statusReason: string | null
+  active: boolean
   reporter: PersonRef
   assignedVolunteer: PersonRef | null
   workSubmitted: boolean

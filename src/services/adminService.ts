@@ -24,6 +24,9 @@ export const assignIssue = async (id: number, volunteerId: number, notes: string
 export const verifyResolution = async (id: number, approved: boolean, note: string) =>
   (await api.patch<IssueDetail>(`/admin/issues/${id}/verify-resolution`, { approved, note })).data
 
+export const setIssueActive = async (id: number, active: boolean) =>
+  (await api.patch<IssueDetail>(`/admin/issues/${id}/active`, { active })).data
+
 export const getUsers = async (role?: Role) => (await api.get<User[]>('/admin/users', { params: { role } })).data
 
 export const updateUser = async (id: number, payload: { role?: Role; enabled?: boolean }) =>

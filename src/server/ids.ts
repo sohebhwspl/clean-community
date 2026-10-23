@@ -5,6 +5,6 @@ const Counter = mongoose.models.Counter ?? mongoose.model('Counter', counterSche
 
 /** Sequential numeric ids per collection, so the UI keeps showing CC-0001 style codes. */
 export async function nextId(name: string): Promise<number> {
-  const doc = await Counter.findOneAndUpdate({ _id: name }, { $inc: { seq: 1 } }, { upsert: true, new: true })
+  const doc = await Counter.findOneAndUpdate({ _id: name }, { $inc: { seq: 1 } }, { upsert: true, returnDocument: 'after' })
   return doc.seq
 }

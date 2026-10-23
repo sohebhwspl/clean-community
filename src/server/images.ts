@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import type { AuthUser } from './auth'
 import { ApiError } from './http'
 import { nextId } from './ids'
-import { findIssue } from './issues'
+import { assertVisible, findIssue } from './issues'
 import { IssueImage, WorkAssignment, User, type ImageType } from './models'
 import { deleteObject, presignedUrl, putObject } from './storage'
 
@@ -37,6 +37,7 @@ async function checkCanUpload(issueId: number, reporterId: number, type: ImageTy
 
 export async function uploadImages(issueId: number, type: ImageType, files: File[], user: AuthUser) {
   const issue = await findIssue(issueId)
+  assertVisible(issue, user)
   await checkCanUpload(issueId, issue.reporterId, type, user)
   if (files.length === 0) throw ApiError.badRequest('Choose at least one image')
   if (files.length > MAX_FILES_PER_REQUEST) throw ApiError.badRequest('You can upload up to 5 images at a time')
